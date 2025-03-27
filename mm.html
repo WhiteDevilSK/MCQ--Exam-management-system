@@ -4,127 +4,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam Management System</title>
+    <title>VIT Examination Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
             font-family: 'Poppins', sans-serif;
         }
 
         body {
+            background: linear-gradient(135deg, #001F3F, #0074D9);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #002855, #004AAD);
+            padding: 20px;
         }
 
         .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            max-width: 420px;
             width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            background: #1E3A8A;
-            border-radius: 12px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
             text-align: center;
-            transition: all 0.3s ease-in-out;
-            color: white;
+            transition: all 0.4s ease-in-out;
+            position: relative;
+            overflow: hidden;
         }
 
         h2 {
             margin-bottom: 15px;
-            color: #FFF;
-            font-weight: bold;
+            font-weight: 600;
+            color: #001F3F;
         }
 
-        input,
-        select,
-        button {
+        input, select, button {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-        }
-
-        input,
-        select {
-            background: #1E40AF;
-            color: white;
-            border: 1px solid #94A3B8;
-        }
-
-        button {
-            background: #FFD700;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
+            padding: 12px;
+            margin-top: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 15px;
             transition: all 0.3s;
         }
 
+        input:focus, select:focus {
+            border-color: #0074D9;
+            outline: none;
+        }
+
+        button {
+            background: #0074D9;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+
         button:hover {
-            background: #FFC107;
+            background: #005fa3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         .hidden {
             display: none;
         }
 
-        .navigation-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
         .logout-btn {
             background: #FF4D4D;
-            color: white;
             margin-top: 15px;
-            padding: 8px;
-            border-radius: 5px;
         }
 
         .logout-btn:hover {
-            background: #FF0000;
+            background: #FF1A1A;
         }
 
         #timer {
             font-size: 18px;
             font-weight: bold;
+            color: #0074D9;
             margin-bottom: 10px;
-            color: #FFD700;
         }
 
         #score {
             font-size: 20px;
             font-weight: bold;
-            color: #FFD700;
+            color: #28a745;
             margin-top: 15px;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            gap: 10px;
         }
 
         .delete-btn {
             background: #FF4D4D;
             color: white;
-            padding: 3px 6px;
-            font-size: 12px;
-            cursor: pointer;
-            border-radius: 5px;
+            padding: 4px 8px;
             border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
             margin-left: 10px;
         }
 
         .delete-btn:hover {
-            background: #FF0000;
+            background: #FF1A1A;
+        }
+
+        input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        /* Smooth transitions */
+        .container, input, select, button {
+            transition: all 0.3s ease;
         }
     </style>
 </head>
 
 <body>
-    <!-- Login Page -->
+    <!-- Login -->
     <div id="loginPage" class="container">
         <h2>VIT Examination Management</h2>
         <h2>Login</h2>
@@ -137,7 +145,7 @@
         <button onclick="login()">Login</button>
     </div>
 
-    <!-- Faculty Dashboard -->
+    <!-- Faculty -->
     <div id="facultyPage" class="container hidden">
         <h2>Faculty Dashboard</h2>
         <input type="text" id="newQuestion" placeholder="Enter Question">
@@ -151,7 +159,7 @@
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
-    <!-- Student Exam Page -->
+    <!-- Student -->
     <div id="studentPage" class="container hidden">
         <h2>Student Exam</h2>
         <div id="timer">Time Left: 30:00</div>
@@ -195,8 +203,6 @@
                 document.getElementById('studentPage').classList.remove('hidden');
                 startFullscreen();
                 startTimer();
-                monitorTabSwitch();
-                monitorFullscreenExit(); // ✅ Added fullscreen monitoring
             }
         }
 
@@ -268,8 +274,7 @@
         function startTimer() {
             let time = 30 * 60;
             timerInterval = setInterval(() => {
-                let min = Math.floor(time / 60),
-                    sec = time % 60;
+                let min = Math.floor(time / 60), sec = time % 60;
                 document.getElementById('timer').innerText = `Time Left: ${min}:${sec < 10 ? '0' : ''}${sec}`;
                 if (time-- <= 0) submitExam();
             }, 1000);
@@ -285,23 +290,9 @@
 
         function logout() { document.exitFullscreen(); location.reload(); }
 
-        function monitorTabSwitch() {
-            document.addEventListener("visibilitychange", function () {
-                if (document.hidden) {
-                    alert("Tab switch detected! Exam will be auto-submitted.");
-                    submitExam();
-                }
-            });
-        }
-
-        function monitorFullscreenExit() {
-            document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) {
-                    alert("You exited fullscreen! Exam will be auto-submitted.");
-                    submitExam();
-                }
-            });
-        }
+        document.addEventListener("fullscreenchange", () => {
+            if (!document.fullscreenElement) submitExam();
+        });
 
         displayQuestions();
     </script>
