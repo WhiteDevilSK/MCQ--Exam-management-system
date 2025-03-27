@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #002855, #004AAD);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background: #1E3A8A;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+            color: white;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: #FFF;
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+
+        input,
+        select {
+            background: #1E40AF;
+            color: white;
+            border: 1px solid #94A3B8;
+        }
+
+        button {
+            background: #FFD700;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #FFC107;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .logout-btn {
+            background: #FF4D4D;
+            color: white;
+            margin-top: 15px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .logout-btn:hover {
+            background: #FF0000;
+        }
+
+        #timer {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        #score {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-top: 15px;
+        }
+
+        .delete-btn {
+            background: #FF4D4D;
+            color: white;
+            padding: 3px 6px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            margin-left: 10px;
+        }
+
+        .delete-btn:hover {
+            background: #FF0000;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="container">
+        <h2>VIT Examination Management</h2>
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Enter Username">
+        <input type="password" id="password" placeholder="Enter Password">
+        <select id="role">
+            <option value="faculty">Faculty</option>
+            <option value="student">Student</option>
+        </select>
+        <button onclick="login()">Login</button>
+    </div>
+
+    <!-- Faculty Dashboard -->
+    <div id="facultyPage" class="container hidden">
+        <h2>Faculty Dashboard</h2>
+        <input type="text" id="newQuestion" placeholder="Enter Question">
+        <input type="text" id="option1" placeholder="Option 1">
+        <input type="text" id="option2" placeholder="Option 2">
+        <input type="text" id="option3" placeholder="Option 3">
+        <input type="text" id="option4" placeholder="Option 4">
+        <input type="text" id="correctAnswer" placeholder="Enter Correct Answer">
+        <button onclick="addQuestion()">Add Question</button>
+        <div id="questionList"></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Student Exam Page -->
+    <div id="studentPage" class="container hidden">
+        <h2>Student Exam</h2>
+        <div id="timer">Time Left: 30:00</div>
+        <div id="questionContainer"></div>
+        <div class="navigation-buttons">
+            <button id="prevBtn" onclick="prevQuestion()">Previous</button>
+            <button id="nextBtn" onclick="nextQuestion()">Next</button>
+        </div>
+        <button id="submitExamBtn" onclick="submitExam()">Submit Exam</button>
+        <div id="score" class="hidden"></div>
+    </div>
+
+    <script>
+        let facultyQuestions = JSON.parse(localStorage.getItem("questions")) || [];
+        let currentQuestionIndex = 0;
+        let studentAnswers = {};
+        let timerInterval;
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+
+            if (!username || !password) {
+                alert("Please enter username and password.");
+                return;
+            }
+
+            if (password !== "password") {
+                alert("Incorrect password!");
+                return;
+            }
+
+            document.getElementById('loginPage').classList.add('hidden');
+
+            if (role === "faculty") {
+                document.getElementById('facultyPage').classList.remove('hidden');
+                displayQuestions();
+            } else if (role === "student") {
+                loadQuestions();
+                document.getElementById('studentPage').classList.remove('hidden');
+                startFullscreen();
+                startTimer();
+                monitorTabSwitch();
+                monitorFullscreenExit(); // ✅ Added fullscreen monitoring
+            }
+        }
+
+        function addQuestion() {
+            const questionText = document.getElementById("newQuestion").value;
+            const option1 = document.getElementById("option1").value;
+            const option2 = document.getElementById("option2").value;
+            const option3 = document.getElementById("option3").value;
+            const option4 = document.getElementById("option4").value;
+            const correctAnswer = document.getElementById("correctAnswer").value;
+
+            if (!questionText || !option1 || !option2 || !option3 || !option4 || !correctAnswer) {
+                alert("Please fill all fields.");
+                return;
+            }
+
+            facultyQuestions.push({
+                question: questionText,
+                options: [option1, option2, option3, option4],
+                correctAnswer
+            });
+            localStorage.setItem("questions", JSON.stringify(facultyQuestions));
+            displayQuestions();
+        }
+
+        function displayQuestions() {
+            let questionList = document.getElementById("questionList");
+            questionList.innerHTML = "";
+            facultyQuestions.forEach((q, index) => {
+                questionList.innerHTML += `
+                    <div>
+                        <span>${index + 1}. ${q.question}</span>
+                        <button class="delete-btn" onclick="deleteQuestion(${index})">X</button>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteQuestion(index) {
+            facultyQuestions.splice(index, 1);
+            localStorage.setItem("questions", JSON.stringify(facultyQuestions));
+            displayQuestions();
+        }
+
+        function loadQuestions() {
+            facultyQuestions = JSON.parse(localStorage.getItem("questions")) || [];
+            if (facultyQuestions.length === 0) {
+                alert("No questions available!");
+                return;
+            }
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            let q = facultyQuestions[currentQuestionIndex];
+            document.getElementById('questionContainer').innerHTML = `
+                <h3>${currentQuestionIndex + 1}. ${q.question}</h3>
+                ${q.options.map((opt) => `<p><input type="radio" name="answer" value="${opt}" onchange="saveAnswer('${opt}')"> ${opt}</p>`).join('')}
+            `;
+        }
+
+        function saveAnswer(answer) { studentAnswers[currentQuestionIndex] = answer; }
+
+        function prevQuestion() { if (currentQuestionIndex > 0) currentQuestionIndex--; displayQuestion(); }
+        function nextQuestion() { if (currentQuestionIndex < facultyQuestions.length - 1) currentQuestionIndex++; displayQuestion(); }
+
+        function startFullscreen() { document.documentElement.requestFullscreen(); }
+
+        function startTimer() {
+            let time = 30 * 60;
+            timerInterval = setInterval(() => {
+                let min = Math.floor(time / 60),
+                    sec = time % 60;
+                document.getElementById('timer').innerText = `Time Left: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+                if (time-- <= 0) submitExam();
+            }, 1000);
+        }
+
+        function submitExam() {
+            let score = Object.keys(studentAnswers).filter(i => studentAnswers[i] === facultyQuestions[i].correctAnswer).length;
+            document.getElementById('score').innerText = `Your Score: ${score}/${facultyQuestions.length}`;
+            document.getElementById('score').classList.remove('hidden');
+            clearInterval(timerInterval);
+            setTimeout(logout, 3000);
+        }
+
+        function logout() { document.exitFullscreen(); location.reload(); }
+
+        function monitorTabSwitch() {
+            document.addEventListener("visibilitychange", function () {
+                if (document.hidden) {
+                    alert("Tab switch detected! Exam will be auto-submitted.");
+                    submitExam();
+                }
+            });
+        }
+
+        function monitorFullscreenExit() {
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    alert("You exited fullscreen! Exam will be auto-submitted.");
+                    submitExam();
+                }
+            });
+        }
+
+        displayQuestions();
+    </script>
+</body>
+
+</html>
